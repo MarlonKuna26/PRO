@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>CRUD Productos y Stock con AJAX</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<button id="btnListar">Listar Productos</button>
+<button id="btnInsertar">Insertar Nuevo Producto</button>
+<button id="btnAgregarStock">Agregar Stock (+)</button>
+<button id="btnRetirarStock">Retirar Stock (-)</button>
+<button id="btnEliminar">Eliminar Producto</button>
+
+
+<p id="resultado"></p>
+
+<form id="formulario">
+    <label>Código de Producto</label>
+    <input type="text" id="txtcodigo" name="txtcodigo" placeholder="Código Único">
+    
+    <label>Nombre del Producto</label>
+    <input type="text" id="txtnombre" name="txtnombre" placeholder="Nombre">
+    
+    <label>Stock Inicial/Actual</label>
+    <input type="number" id="txtstock" name="txtstock" placeholder="Stock Inicial/Actual">
+    
+    <label>Cantidad a Mover (Solo para Stock)</label>
+    <input type="number" id="txtcantidad" name="txtcantidad" placeholder="Cantidad (+/-)">
+</form>
+
+<script>
+// 1. LISTAR PRODUCTOS
+$("#btnListar").click(function(){
+    $.ajax({
+        url:"api.php",
+        type:"GET",
+        dataType:"json",
+        success:function(data){
+            let tabla=`<table border="1">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            data.forEach(prod => {
+                tabla+=`
+                <tr>
+                    <td>${prod.codigo}</td>
+                    <td>${prod.nombre}</td>
+                    <td>${prod.stock}</td>
+                </tr>`;
+            });
+            tabla+=`</tbody></table>`;
+            $("#resultado").html(tabla);
+        },
+        error:function(error){
+            console.error("error al obtener el Get",error);
+        }
+    });
+});
+
+// 2. INSERTAR NUEVO PRODUCTO
+$("#btnInsertar").click(function(){
+    $.ajax({
+        url: "api.php",
+        type: "POST",
+        dataType: "json",
+        data: {
+            codigo: $("#txtcodigo").val(),
+            nombre: $("#txtnombre").val(),
+            stock: $("#txtstock").val()
+        },
+        success: function (data) {
+            alert(data);
+        },
+        error: function (error) {
+            console.error(error);
+        }
+    });
+});
+
+// 3. ELIMINAR PRODUCTO
+$("#btnEliminar").click(function(){
+    const codigo = $("#txtcodigo").val();
+    if (!codigo) {
+        alert("Ingrese el código del producto a eliminar.");
+        return;
+    }
+    $.ajax({
+        url: "api.php?codigo=" + codigo,
+        type: "DELETE",
+        dataType: "json",
+        success: function (data) {
+            alert(data);
+        },
+        error: function (error) {
+            console.error(error);
+        }
+    });
+});
+
+// 4. AGREGAR STOCK (+)
+$("#btnAgregarStock").click(function(){ 
+    const codigo = $("#txtcodigo").val();
+    const cantidad = $("#txtcantidad").val();
+    
+    if (!codigo || !cantidad) {
+        alert("Ingrese el código del producto y la cantidad a agregar.");
+        return;
+    }
+
+    $.ajax({
+        url: "api.php",
+        type: "POST",
+        dataType: "json",
+        data: {
+            accion: 'ajustarStock', // Parámetro para diferenciar en api.php
+            codigo: codigo,
+            cantidad: cantidad // Se envía como positivo para sumar
+        },
+        success: function(data){
+            alert(data);
+        },
+        error: function(error){
+            console.error("Error al agregar stock", error);
+            alert("Error al agregar stock.");
+        }
+    });
+});
+
+// 5. RETIRAR STOCK (-)
+$("#btnRetirarStock").click(function(){ 
+    const codigo = $("#txtcodigo").val();
+    // Asegurarse de que la cantidad sea negativa para restar
+    const cantidad = -Math.abs($("#txtcantidad").val()); 
+    
+    if (!codigo || cantidad === 0) {
+        alert("Ingrese el código del producto y la cantidad a retirar.");
+        return;
+    }
+    
+    $.ajax({
+        url: "api.php",
+        type: "POST",
+        dataType: "json",
+        data: {
+            accion: 'ajustarStock', // Parámetro para diferenciar en api.php
+            codigo: codigo,
+            cantidad: cantidad // Se envía como negativo para restar
+        },
+        success: function(data){
+            alert(data);
+        },
+        error: function(error){
+            console.error("Error al retirar stock", error);
+            alert("Error al retirar stock.");
+        }
+    });
+});
+
+</script>
+
+</body>
+</html>
